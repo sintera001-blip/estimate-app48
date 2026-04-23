@@ -38,14 +38,14 @@
     }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overscroll-behavior-y: none; }
+  html, body { height: 100%; }
   body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
 
   /* Layout */
-  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
-  .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+  .app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+  .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10; flex: 0 0 auto; }
   .header h1 { font-size: 18px; font-weight: 600; }
-  .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 72px 16px 80px; }
+  .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; padding-bottom: 80px; }
   .tab-bar { background: var(--card); border-top: 1px solid var(--border); display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
   .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; font-size: 11px; color: var(--hint); cursor: pointer; border: none; background: transparent; }
   .tab-item.active { color: var(--primary); }
@@ -819,7 +819,7 @@ function showPdfTypeModal() {
       <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:8px;align-items:stretch;">
         <button onclick="saveBeforePrint('estimate');" style="padding:14px 8px;background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(26,115,232,0.35);">📄 見積書</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:16px;align-items:stretch;">
+      <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px;align-items:stretch;">
         <button onclick="saveBeforePrint('contract');" style="padding:14px 8px;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(46,125,50,0.35);">✍️ 契約書</button>
       </div>
       <button onclick="closePdfModal();" style="display:block;width:100%;padding:13px;background:#f3f4f6;color:#6b7280;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;">キャンセル</button>
@@ -837,6 +837,8 @@ function closePdfModal() {
 
 async function saveBeforePrint(docType) {
   closePdfModal();
+  const yes = confirm('保存しますか？');
+  if (!yes) return;
   const result = await saveEstimate();
   if (!result || !result.ok) {
     showToast('保存に失敗したためPDF共有を開けませんでした');
@@ -957,8 +959,8 @@ function printEstimate(docType) {
       font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic','Helvetica Neue',sans-serif;
       background:#e8edf2;
       color:#1f2937;
-      font-size:13px;
-      line-height:1.6;
+      font-size:12px;
+      line-height:1.45;
       padding:56px 8px 24px;
     }
     /* ── 操作バー ── */
@@ -995,7 +997,7 @@ function printEstimate(docType) {
       background:#fff;
       border-radius:4px;
       box-shadow:0 4px 32px rgba(0,0,0,0.18),0 1px 4px rgba(0,0,0,0.08);
-      padding:28px 24px 32px;
+      padding:20px 18px 22px;
       display:flex;flex-direction:column;
       min-height:calc(100vh - 80px);
     }
@@ -1070,7 +1072,7 @@ function printEstimate(docType) {
     .notes-body{font-size:12.5px;color:#374151;}
     /* ── 印刷 ── */
     @media print{
-      @page{size:A4 portrait;margin:10mm 12mm;}
+      @page{size:A4 portrait;margin:8mm 10mm;}
       body{background:#fff;padding:0;}
       .actionbar{display:none;}
       .sheet{border-radius:0;box-shadow:none;padding:0;max-width:none;display:flex;flex-direction:column;}
@@ -1079,7 +1081,7 @@ function printEstimate(docType) {
   </head>
   <body>
   <div class="actionbar">
-    ${isPublicViewer ? '<div style="width:96px;"></div>' : '<button class="btn btn-back" onclick="goBackToApp()">← 戻る</button>'}
+    ${isPublicViewer ? '<div style="width:24px;"></div>' : '<button class="btn btn-back" onclick="goBackToApp()">← 戻る</button>'}
     <div class="actionbar-title">${docTitle.replace(/\s/g,'')}</div>
     <div style="display:flex;gap:8px;align-items:center;">
       ${(!isPublicViewer && shareUrl) ? '<button class="btn btn-share" onclick="showShareQr()">QR表示</button>' : ''}
@@ -1482,16 +1484,16 @@ if (IS_PUBLIC_PDF_MODE) {
   if (targetId && hasWebAppUrl()) {
     try {
       const joiner = WEB_APP_URL.includes('?') ? '&' : '?';
-      const res = await fetch(WEB_APP_URL + joiner + 'mode=list&_ts=' + Date.now());
+      const res = await fetch(
+        WEB_APP_URL + joiner + 'mode=get&id=' + encodeURIComponent(targetId) + '&_ts=' + Date.now(),
+        { cache: 'no-store' }
+      );
       const data = await res.json();
-      if (data.ok && Array.isArray(data.estimates)) {
-        const found = data.estimates.find(e => String(e.id) === String(targetId));
-        if (found) {
-          const est = normalizeLoadedEstimate(found);
-          loadEstimateToForm(est);
-          setTimeout(() => printEstimate(docType), 400);
-          return;
-        }
+      if (data.ok && data.estimate) {
+        const est = normalizeLoadedEstimate(data.estimate);
+        loadEstimateToForm(est);
+        setTimeout(() => printEstimate(docType), 250);
+        return;
       }
     } catch(e) {}
   }
